@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bing Sari-sari Store</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; color: #333; padding-bottom: 60px; }
+        header { background-color: #20639B; color: white; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
+        
+        .view-section { display: block; }
+        .hidden { display: none !important; }
+
+        .controls { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px; }
+        .search-box { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; width: 100%; }
+        .categories { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; white-space: nowrap; }
+        .btn-category { background-color: #e2e8f0; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .btn-category.active { background-color: #20639B; color: white; }
+
+        h2 { margin: 20px 0 10px 0; color: #20639B; display: flex; justify-content: space-between; align-items: center; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+        .product-card { background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+        .product-name { font-weight: bold; margin-bottom: 5px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
+        .product-price { color: #e63946; font-weight: bold; margin-bottom: 10px; }
+        .product-stock { font-size: 12px; color: #777; margin-bottom: 10px; }
+        .badge { font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px; position: absolute; top: 8px; }
+        .low-stock-badge { background-color: #ef4444; color: white; right: 8px; }
+        .expiry-badge { background-color: #f5a623; color: white; left: 8px; }
+        
+        .btn-add { background-color: #3CAEA3; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; }
+        .btn-add:hover { background-color: #2c7e75; }
+        
+        .cart-section { background: white; padding: 20px; border-radius: 8px; margin-top: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .cart-item-info { display: flex; flex-direction: column; gap: 2px; }
+        .cart-item-name { font-weight: 600; }
+        .cart-item-price { font-size: 13px; color: #e63946; font-weight: bold; }
+        .cart-controls { display: flex; align-items: center; gap: 8px; }
+        .btn-qty { background-color: #cbd5e1; border: none; width: 28px; height: 28px; border-radius: 5px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-qty:hover { background-color: #94a3b8; }
+        .btn-trash { background-color: #fee2e2; color: #ef4444; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-trash:hover { background-color: #fca5a5; }
+        .cart-total { font-size: 20px; font-weight: bold; text-align: right; margin-top: 15px; color: #20639B; border-top: 2px dashed #eee; padding-top: 10px; }
+        
+        .checkout-form { margin-top: 15px; display: flex; flex-direction: column; gap: 15px; }
+        .checkout-form input { padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        .payment-options { display: flex; gap: 15px; margin: 5px 0; background: #f8fafc; padding: 10px; border-radius: 5px; border: 1px dashed #cbd5e1; flex-wrap: wrap; }
+        .payment-label { font-weight: bold; color: #555; font-size: 14px; margin-bottom: -5px; }
+        .radio-group { display: flex; align-items: center; gap: 8px; font-size: 16px; cursor: pointer; }
+        
+        .change-display { background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 5px; color: #166534; font-weight: bold; font-size: 16px; display: none; }
+        .change-display.alert { background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        .gcash-info-box { background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 5px; color: #1e40af; display: none; flex-direction: column; gap: 8px; }
+
+        .btn-checkout { background-color: #0084FF; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; }
+        .btn-checkout:hover { background-color: #0066cc; }
+
+        /* Receipt Modal */
+        .receipt-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: center; justify-content: center; }
+        .receipt-content { background: white; padding: 25px; border-radius: 8px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        .receipt-paper { background: #fffdf5; border: 1px solid #ddd; padding: 20px; text-align: left; font-family: 'Courier New', Courier, monospace; font-size: 13px; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .receipt-line { border-bottom: 1px dashed #777; margin: 8px 0; }
+        .receipt-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .btn-close-receipt { background: #20639B; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; }
+
+        /* Admin Styles */
+        .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .analytics-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 5px; }
+        .analytics-card h4 { font-size: 14px; color: #64748b; text-transform: uppercase; }
+        .analytics-card .val { font-size: 24px; font-weight: bold; color: #1e293b; }
+        .analytics-card.profit .val { color: #16a34a; }
+        .analytics-card.cost .val { color: #ea580c; }
+
+        .admin-box { background: white; padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-group input, .form-group select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 15px; }
+        .btn-save { background-color: #3CAEA3; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        
+        .admin-table-container { overflow-x: auto; margin-top: 15px; }
+        .admin-table { width: 100%; border-collapse: collapse; text-align: left; background: white; }
+        .admin-table th, .admin-table td { padding: 12px; border-bottom: 1px solid #ddd; font-size: 14px; }
+        .admin-table th { background-color: #20639B; color: white; }
+        .tr-low-stock { background-color: #fef2f2; }
+        .tr-expired { background-color: #fff7ed; border-left: 4px solid #ea580c; }
+        .btn-danger { background-color: #e63946; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-success-small { background-color: #16a34a; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-nav { background-color: #333; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold; }
+
+        .custom-popup {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-weight: 600;
+            font-size: 15px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .custom-popup.show { top: 25px; }
+        .custom-popup.error { background-color: #e63946; }
+        .custom-popup.success { background-color: #3CAEA3; }
+        .custom-popup.warning { background-color: #f5a623; }
+
+        footer { text-align: center; padding: 20px 0; font-size: 12px; color: #aaa; margin-top: 5px; }
+        .secret-link { color: #ddd; text-decoration: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="popup-notification" class="custom-popup">📢 Notification Message</div>
+
+    <div id="receipt-modal" class="receipt-modal">
+        <div class="receipt-content">
+            <h3 style="margin-bottom: 10px; color: #16a34a;">🎉 Order Successful!</h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Nakopya na ang text receipt sa clipboard mo. Heto ang iyong digital copy:</p>
+            <div class="receipt-paper" id="receipt-paper-content"></div>
+            <button class="btn-close-receipt" onclick="closeReceiptModal()">Ipadala sa Messenger & Magpatuloy</button>
+        </div>
+    </div>
+
+    <header>
+        <h1 id="store-title">Bing Sari-Sari Store 🏪</h1>
+        <p id="store-subtitle">Sari-Sari Store Management & Online Ordering System</p>
+    </header>
+
+    <div class="container">
+        
+        <div id="customer-view" class="view-section">
+            <div class="controls">
+                <input type="text" id="search-input" class="search-box" placeholder="Maghanap ng paninda..." oninput="filterProducts()">
+                <div class="categories" id="category-container"></div>
+            </div>
+
+            <h2>Mga Paninda</h2>
+            <div class="product-grid" id="product-container"></div>
+
+            <div class="cart-section">
+                <h2>Ang Iyong Basket 🛒</h2>
+                <div id="cart-items">
+                    <p style="color: #777; padding: 10px 0;">Walang laman ang basket mo.</p>
+                </div>
+                <div class="cart-total" id="cart-total">Total: ₱0.00</div>
+                
+                <div class="checkout-form">
+                    <input type="text" id="customer-name" placeholder="Ilagay ang iyong Pangalan" required>
+                    
+                    <div class="payment-label">Paraan ng Pagbayad:</div>
+                    <div class="payment-options">
+                        <label class="radio-group"><input type="radio" name="payment-method" value="Cash" checked onchange="handlePaymentChange()"> 💵 Cash</label>
+                        <label class="radio-group"><input type="radio" name="payment-method" value="GCash" onchange="handlePaymentChange()"> 🔵 GCash</label>
+                        <label class="radio-group"><input type="radio" name="payment-method" value="Utang" onchange="handlePaymentChange()"> 📝 Ilista (Utang)</label>
+                    </div>
+
+                    <div id="cash-calculator-fields" style="display: flex; flex-direction: column; gap: 10px;">
+                        <input type="number" id="customer-cash" placeholder="Magkano ang pera mo?" oninput="calculateChange()">
+                        <div id="change-box" class="change-display"></div>
+                    </div>
+
+                    <div id="gcash-fields" class="gcash-info-box">
+                        <div>📱 <strong>GCash Number:</strong> <span style="font-size: 18px; color: #0084FF;">0912-345-6789</span> (Bing M.)</div>
+                        <input type="text" id="gcash-ref" placeholder="Ilagay ang GCash Reference No.">
+                    </div>
+
+                    <button class="btn-checkout" onclick="checkoutOrder()">I-place ang Order via Messenger</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="admin-view" class="view-section hidden">
+            <h2>
+                <span>Admin Dashboard ⚙️</span>
+                <button class="btn-nav" onclick="switchView('customer')">Bumalik sa Tindahan</button>
+            </h2><br>
+
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h4>Benta (Gross Revenue)</h4>
+                    <div class="val" id="stat-revenue">₱0.00</div>
+                </div>
+                <div class="analytics-card cost">
+                    <h4>Puhunan (Total Cost)</h4>
+                    <div class="val" id="stat-cost">₱0.00</div>
+                </div>
+                <div class="analytics-card profit">
+                    <h4>Net Profit (Kita mo)</h4>
+                    <div class="val" id="stat-profit">₱0.00</div>
+                </div>
+            </div>
+
+            <div class="admin-box">
+                <h3 style="margin-bottom: 15px; color: #20639B;">Magdagdag ng Bagong Paninda</h3>
+                <div class="form-group">
+                    <label>Pangalan ng Paninda</label>
+                    <input type="text" id="admin-pname" placeholder="Halimbawa: Piattos (Large)">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Puhunan (₱)</label>
+                        <input type="number" id="admin-pcost" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Benta (₱)</label>
+                        <input type="number" id="admin-pprice" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Initial Stock</label>
+                        <input type="number" id="admin-pstock" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Kategorya</label>
+                        <select id="admin-pcategory">
+                            <option value="Inumin">Inumin</option>
+                            <option value="Snacks">Snacks</option>
+                            <option value="Instant Noodles">Instant Noodles</option>
+                            <option value="Lata">Lata</option>
+                            <option value="Kape/Asukal">Kape/Asukal</option>
+                            <option value="Iba pa">Iba pa</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Expiration Date (Optional)</label>
+                    <input type="date" id="admin-pexpiry">
+                </div>
+                <button class="btn-save" onclick="saveNewProduct()">I-save sa Inventory</button>
+            </div>
+
+            <div class="admin-box" style="border-top: 4px solid #333;">
+                <h3 style="color: #333; margin-bottom: 10px;">📝 Utang Ledger System (Digital Notebook)</h3>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Max Credit Limit bawat customer: <strong>₱300.00</strong>.</p>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr style="background-color: #475569; color: white;">
+                                <th>Pangalan ng Customer</th>
+                                <th>Kasalukuyang Utang</th>
+                                <th>Status</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-ledger-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-box">
+                <h3 style="color: #20639B;">Kasalukuyang Inventory Stocks & Expiration</h3>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Produkto</th>
+                                <th>Kategorya</th>
+                                <th>Puhunan</th>
+                                <th>Benta</th>
+                                <th>Expiration</th>
+                                <th>Stock</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-box">
+                <h3 style="color: #16a34a;">Kasaysayan ng mga Benta (Sales Log)</h3>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr style="background-color: #16a34a; color: white;">
+                                <th>Oras / Petsa</th>
+                                <th>Customer</th>
+                                <th>Paraan</th>
+                                <th>Total Order</th>
+                                <th>Net Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-sales-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 Bing Sari-sari Store Ultimate POS | <span class="secret-link" onclick="checkAdminAccess()">⚙️</span></p>
+    </footer>
+
+    <script>
+        const CREDIT_LIMIT = 300.00;
+        const defaultProducts = [
+            { id: 1, name: "Coke Mismo", cost: 16, price: 20, stock: 12, category: "Inumin", expiry: "2026-12-01" },
+            { id: 2, name: "Nova (Large)", cost: 14, price: 18, stock: 2, category: "Snacks", expiry: "" },
+            { id: 3, name: "Lucky Me Pancit Canton", cost: 13, price: 16, stock: 15, category: "Instant Noodles", expiry: "2026-06-15" },
+            { id: 4, name: "555 Sardines", cost: 20, price: 24, stock: 10, category: "Lata", expiry: "2028-01-01" }
+        ];
+
+        let products = JSON.parse(localStorage.getItem('ult_sari_products')) || defaultProducts;
+        let salesHistory = JSON.parse(localStorage.getItem('ult_sari_sales')) || [];
+        let debtorLedger = JSON.parse(localStorage.getItem('ult_sari_debtors')) || {};
+        let cart = [];
+        let currentCategory = "Lahat";
+
+        function showNotification(message, type = 'warning') {
+            const popup = document.getElementById('popup-notification');
+            popup.innerText = message;
+            popup.className = 'custom-popup ' + type + ' show';
+            setTimeout(() => { popup.className = 'custom-popup'; }, 3000);
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('ult_sari_products', JSON.stringify(products));
+            localStorage.setItem('ult_sari_sales', JSON.stringify(salesHistory));
+            localStorage.setItem('ult_sari_debtors', JSON.stringify(debtorLedger));
+        }
+
+        function switchView(view) {
+            if (view === 'admin') {
+                document.getElementById('customer-view').classList.add('hidden');
+                document.getElementById('admin-view').classList.remove('hidden');
+                refreshAdminDashboard();
+            } else {
+                document.getElementById('admin-view').classList.add('hidden');
+                document.getElementById('customer-view').classList.remove('hidden');
+                displayCategories();
+                filterProducts();
+            }
+        }
+
+        function refreshAdminDashboard() {
+            loadAdminTable();
+            loadLedgerTable();
+            loadAnalytics();
+        }
+
+        function checkAdminAccess() {
+            if (prompt("Admin Password:") === "admin123") {
+                switchView('admin');
+                showNotification("POS Unlocked!", "success");
+            } else {
+                showNotification("❌ Access Denied.", "error");
+            }
+        }
+
+        function displayCategories() {
+            const container = document.getElementById('category-container');
+            const categories = ["Lahat", ...new Set(products.map(p => p.category))];
+            container.innerHTML = '';
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `btn-category ${cat === currentCategory ? 'active' : ''}`;
+                btn.innerText = cat;
+                btn.onclick = () => { currentCategory = cat; displayCategories(); filterProducts(); };
+                container.appendChild(btn);
+            });
+        }
+
+        function isNearExpiry(expiryDateStr) {
+            if(!expiryDateStr) return false;
+            const expiry = new Date(expiryDateStr);
+            const today = new Date();
+            const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+            return diffDays >= 0 && diffDays <= 30;
+        }
+
+        function filterProducts() {
+            const searchTxt = document.getElementById('search-input').value.toLowerCase();
+            const container = document.getElementById('product-container');
+            container.innerHTML = '';
+
+            products.filter(p => {
+                return p.name.toLowerCase().includes(searchTxt) && (currentCategory === "Lahat" || p.category === currentCategory);
+            }).forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                let stockBadge = product.stock <= 3 ? `<div class="badge low-stock-badge">Low Stock</div>` : '';
+                let expiryBadge = isNearExpiry(product.expiry) ? `<div class="badge expiry-badge">Near Expiry</div>` : '';
+
+                card.innerHTML = `
+                    ${stockBadge} ${expiryBadge}
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-price">₱${product.price.toFixed(2)}</div>
+                    <div class="product-stock" style="${product.stock <= 3 ? 'color:#ef4444; font-weight:bold;':''}">Stock: ${product.stock} pcs</div>
+                    <button class="btn-add" onclick="addToCart(${product.id})">Piliin</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product.stock <= 0) { showNotification(`⚠️ Ubos na ang stock!`, "error"); return; }
+            const cartItem = cart.find(item => item.id === productId);
+            if (cartItem) {
+                if (cartItem.quantity < product.stock) { cartItem.quantity++; } 
+                else { showNotification("⚠️ Sagad na sa stock limit!", "warning"); return; }
+            } else { cart.push({ ...product, quantity: 1 }); }
+            updateCartUI();
+            calculateChange();
+        }
+
+        function changeQuantity(id, delta) {
+            const cartItem = cart.find(item => item.id === id);
+            const realProduct = products.find(p => p.id === id);
+            if(!cartItem) return;
+            if(delta > 0 && cartItem.quantity >= realProduct.stock) { showNotification("⚠️ Ubos na ang supply!", "warning"); return; }
+            cartItem.quantity += delta;
+            if(cartItem.quantity <= 0) cart = cart.filter(item => item.id !== id);
+            updateCartUI();
+            calculateChange();
+        }
+
+        function removeCartItem(id) {
+            cart = cart.filter(item => item.id !== id);
+            updateCartUI();
+            calculateChange();
+        }
+
+        function getCartGrandTotal() { return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0); }
+
+        function updateCartUI() {
+            const cartContainer = document.getElementById('cart-items');
+            const totalContainer = document.getElementById('cart-total');
+            if (cart.length === 0) {
+                cartContainer.innerHTML = '<p style="color: #777; padding: 10px 0;">Walang laman ang basket mo.</p>';
+                totalContainer.innerHTML = 'Total: ₱0.00';
+                return;
+            }
+            cartContainer.innerHTML = '';
+            cart.forEach(item => {
+                cartContainer.innerHTML += `
+                    <div class="cart-item">
+                        <div class="cart-item-info"><span class="cart-item-name">${item.name}</span><span class="cart-item-price">₱${(item.price * item.quantity).toFixed(2)}</span></div>
+                        <div class="cart-controls">
+                            <button class="btn-qty" onclick="changeQuantity(${item.id}, -1)">-</button>
+                            <span style="font-weight:bold; min-width:20px; text-align:center;">${item.quantity}</span>
+                            <button class="btn-qty" onclick="changeQuantity(${item.id}, 1)">+</button>
+                            <button class="btn-trash" onclick="removeCartItem(${item.id})">🗑️</button>
+                        </div>
+                    </div>`;
+            });
+            totalContainer.innerHTML = `Total: ₱${getCartGrandTotal().toFixed(2)}`;
+        }
+
+        function handlePaymentChange() {
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+            document.getElementById('cash-calculator-fields').style.display = paymentMethod === "Cash" ? 'flex' : 'none';
+            document.getElementById('gcash-fields').style.display = paymentMethod === "GCash" ? 'flex' : 'none';
+        }
+
+        function calculateChange() {
+            const cashInput = document.getElementById('customer-cash').value;
+            const changeBox = document.getElementById('change-box');
+            const total = getCartGrandTotal();
+            if (!cashInput || total === 0) { changeBox.style.display = 'none'; return; }
+            changeBox.style.display = 'block';
+            if (parseFloat(cashInput) < total) {
+                changeBox.className = "change-display alert";
+                changeBox.innerHTML = `⚠️ Kulang ng ₱${(total - parseFloat(cashInput)).toFixed(2)}`;
+            } else {
+                changeBox.className = "change-display";
+                changeBox.innerHTML = `💰 Sukli: ₱${(parseFloat(cashInput) - total).toFixed(2)}`;
+            }
+        }
+
+        function showReceiptWindow(name, method, total, itemsList, detailsLine) {
+            const paper = document.getElementById('receipt-paper-content');
+            let itemsHTML = "";
+            itemsList.forEach(item => { itemsHTML += `<div class="receipt-row"><div>${item.name} x${item.quantity}</div><div>₱${(item.price * item.quantity).toFixed(2)}</div></div>`; });
+            
+            paper.innerHTML = `
+                <div style="text-align:center; font-weight:bold;">BING SARI-SARI STORE</div>
+                <div class="receipt-line"></div>
+                <div class="receipt-row"><div>Customer:</div><div>${name}</div></div>
+                <div class="receipt-row"><div>Payment:</div><div>${method.toUpperCase()}</div></div>
+                <div class="receipt-line"></div>
+                ${itemsHTML}
+                <div class="receipt-line"></div>
+                <div class="receipt-row" style="font-weight:bold;"><div>TOTAL:</div><div>₱${total.toFixed(2)}</div></div>
+                ${detailsLine}
+            `;
+            document.getElementById('receipt-modal').style.display = 'flex';
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').style.display = 'none';
+            window.open(`https://m.me/YOUR_FB_USERNAME_HERE`, '_blank');
+        }
+
+        function checkoutOrder() {
+            const customerName = document.getElementById('customer-name').value.trim();
+            if (cart.length === 0 || customerName === "") { showNotification("⚠️ Ayusin ang pangalan/basket!", "warning"); return; }
+
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+            const cashInput = document.getElementById('customer-cash').value;
+            const gcashRefInput = document.getElementById('gcash-ref').value.trim();
+            const grandTotal = getCartGrandTotal();
+
+            if (paymentMethod === "Utang" && ((debtorLedger[customerName] || 0) + grandTotal > CREDIT_LIMIT)) {
+                showNotification(`❌ Blocked! Lalampas sa Limit na ₱${CREDIT_LIMIT}!`, "error");
+                return;
+            }
+
+            let currentOrderCost = 0;
+            let detailsHTML = "";
+            let textToCopy = `🔴 BAGONG ORDER MULA SA WEB 🔴\n\n`;
+            textToCopy += `Customer: ${customerName}\n`;
+            textToCopy += `Bayad via: ${paymentMethod.toUpperCase()}\n`;
+
+            if (paymentMethod === "Cash" && cashInput) {
+                detailsHTML = `<div>Sukli: ₱${(parseFloat(cashInput) - grandTotal).toFixed(2)}</div>`;
+                textToCopy += `Sukli: ₱${(parseFloat(cashInput) - grandTotal).toFixed(2)}\n`;
+            } else if (paymentMethod === "GCash") {
+                detailsHTML = `<div>Ref No: ${gcashRefInput}</div>`;
+                textToCopy += `Ref No: ${gcashRefInput}\n`;
+            } else if (paymentMethod === "Utang") {
+                debtorLedger[customerName] = (debtorLedger[customerName] || 0) + grandTotal;
+                detailsHTML = `<div style="color:orange">Utang Bal: ₱${debtorLedger[customerName].toFixed(2)}</div>`;
+                textToCopy += `[Idinagdag sa Utang Ledger]\n`;
+            }
+
+            textToCopy += `\nMga Order:\n`;
+            cart.forEach(item => {
+                textToCopy += `- ${item.name} (x${item.quantity}) = ₱${(item.price * item.quantity).toFixed(2)}\n`;
+                const realProd = products.find(p => p.id === item.id);
+                if(realProd) { realProd.stock -= item.quantity; currentOrderCost += (realProd.cost * item.quantity); }
+            });
+
+            textToCopy += `\nKabuuan: ₱${grandTotal.toFixed(2)}\nPaki-handa po, salamat!`;
+
+            salesHistory.unshift({ timestamp: new Date().toLocaleString(), customer: customerName, method: paymentMethod, revenue: grandTotal, cost: currentOrderCost, profit: (grandTotal - currentOrderCost) });
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                saveToLocalStorage();
+                showReceiptWindow(customerName, paymentMethod, grandTotal, cart, detailsHTML);
+                cart = []; updateCartUI(); filterProducts();
+                showNotification("📋 Copied to clipboard!", "success");
+            }).catch(() => {
+                showNotification("❌ Clipboard error.", "error");
+            });
+        }
+
+        function loadAnalytics() {
+            let rev = 0, cst = 0, prf = 0;
+            salesHistory.forEach(s => { rev += s.revenue; cst += s.cost; prf += s.profit; });
+            document.getElementById('stat-revenue').innerText = `₱${rev.toFixed(2)}`;
+            document.getElementById('stat-cost').innerText = `₱${cst.toFixed(2)}`;
+            document.getElementById('stat-profit').innerText = `₱${prf.toFixed(2)}`;
+            
+            const tbody = document.getElementById('admin-sales-body');
+            tbody.innerHTML = '';
+            salesHistory.forEach(log => {
+                tbody.innerHTML += `<tr><td>${log.timestamp}</td><td>${log.customer}</td><td>${log.method}</td><td>₱${log.revenue.toFixed(2)}</td><td style="color:green">+₱${log.profit.toFixed(2)}</td></tr>`;
+            });
+        }
+
+        function loadLedgerTable() {
+            const tbody = document.getElementById('admin-ledger-body');
+            tbody.innerHTML = '';
+            Object.keys(debtorLedger).forEach(name => {
+                tbody.innerHTML += `<tr><td>${name}</td><td>₱${debtorLedger[name].toFixed(2)}</td><td>${debtorLedger[name] >= CREDIT_LIMIT ? '🚫 Blocked':'Active'}</td><td><button class="btn-success-small" onclick="payDebt('${name}')">Bayad</button></td></tr>`;
+            });
+        }
+
+        function payDebt(name) {
+            let amt = parseFloat(prompt(`Magkano ang ibabayad ni ${name}?`));
+            if(!isNaN(amt) && amt > 0) {
+                debtorLedger[name] -= amt;
+                if(debtorLedger[name] <= 0) delete debtorLedger[name];
+                saveToLocalStorage(); refreshAdminDashboard(); showNotification("Na-update ang ledger!", "success");
+            }
+        }
+
+        function loadAdminTable() {
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = '';
+            products.forEach(p => {
+                tbody.innerHTML += `<tr class="${p.stock <= 3 ? 'tr-low-stock':''} ${isNearExpiry(p.expiry)?'tr-expired':''}"><td>${p.name}</td><td>${p.category}</td><td>₱${p.cost}</td><td>₱${p.price}</td><td>${p.expiry || '--'}</td><td><input type="number" value="${p.stock}" onchange="updateStockInline(${p.id}, this.value)" style="width:50px"></td><td><button class="btn-danger" onclick="deleteProduct(${p.id})">X</button></td></tr>`;
+            });
+        }
+
+        function updateStockInline(id, val) {
+            const p = products.find(prod => prod.id === id);
+            if(p) { p.stock = parseInt(val) || 0; saveToLocalStorage(); refreshAdminDashboard(); }
+        }
+
+        function deleteProduct(id) {
+            products = products.filter(p => p.id !== id); saveToLocalStorage(); refreshAdminDashboard();
+        }
+
+        function saveNewProduct() {
+            const name = document.getElementById('admin-pname').value;
+            const cost = parseFloat(document.getElementById('admin-pcost').value);
+            const price = parseFloat(document.getElementById('admin-pprice').value);
+            const stock = parseInt(document.getElementById('admin-pstock').value);
+            const category = document.getElementById('admin-pcategory').value;
+            const expiry = document.getElementById('admin-pexpiry').value;
+
+            products.push({ id: Date.now(), name, cost, price, stock, category, expiry });
+            saveToLocalStorage(); refreshAdminDashboard(); showNotification("Saved!", "success");
+            
+            document.getElementById('admin-pname').value = '';
+            document.getElementById('admin-pcost').value = '';
+            document.getElementById('admin-pprice').value = '';
+            document.getElementById('admin-pstock').value = '';
+            document.getElementById('admin-pexpiry').value = '';
+        }
+
+        window.onload = () => { displayCategories(); filterProducts(); };
+    </script>
+</body>
+</html>
